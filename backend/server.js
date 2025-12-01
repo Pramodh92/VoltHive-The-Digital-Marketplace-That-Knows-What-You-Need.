@@ -19,7 +19,7 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Serve static frontend files
-app.use(express.static(path.join(__dirname, '../frontend')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 // API Routes
 app.use('/api/products', productsRouter);
@@ -45,7 +45,7 @@ app.get('/api', (req, res) => {
 
 // Serve frontend pages
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Handle 404
