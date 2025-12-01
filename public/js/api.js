@@ -113,11 +113,16 @@ const API = {
     // Merge details
     return cart.map(item => {
       const product = products.find(p => p.id == item.productId);
+
+      if (!product) return null;
+
       return {
-        ...item,
-        product
+        ...product,
+        quantity: item.quantity,
+        productId: item.productId,
+        total: product.price * item.quantity
       };
-    });
+    }).filter(item => item !== null);
   },
 
   async updateCartItem(productId, quantity, userId = 'guest') {
