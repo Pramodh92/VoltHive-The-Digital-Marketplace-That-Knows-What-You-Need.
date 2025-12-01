@@ -6,7 +6,6 @@ backend/data/*.json
 *.log
 .DS_Store
 .vercel
-public
 api
 *.md
 !README.md
