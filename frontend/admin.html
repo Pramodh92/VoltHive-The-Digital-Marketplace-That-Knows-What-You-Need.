@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Electronics Store</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">⚡ ElectroShop</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="#" id="ordersLink" style="display: none;">My Orders</a></li>
+        <li><a href="#" id="adminLink" style="display: none;">Admin</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="user-info" id="userInfo" style="display: none;">
+          <span class="user-name" id="userName"></span>
+          <a href="#" class="btn btn-small btn-secondary" id="logoutBtn">Logout</a>
+        </div>
+        <div id="authLinks">
+          <a href="login.html" class="btn btn-small btn-outline">Login</a>
+          <a href="signup.html" class="btn btn-small btn-primary">Sign Up</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="admin-page">
+    <div class="container">
+      <div class="admin-header">
+        <h2>Product Management</h2>
+        <button class="btn btn-primary" onclick="openModal()">Add New Product</button>
+      </div>
+
+      <div class="admin-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody">
+            <!-- Products will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div class="loading" id="loadingSpinner">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Product Modal -->
+  <div class="modal" id="productModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Product</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+
+      <div id="modalAlert"></div>
+
+      <form id="productForm" onsubmit="handleSubmit(event)">
+        <input type="hidden" id="productId">
+
+        <div class="form-group">
+          <label for="productName">Product Name *</label>
+          <input type="text" id="productName" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productDescription">Description</label>
+          <textarea id="productDescription" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="productCategory">Category *</label>
+          <select id="productCategory" required>
+            <option value="">Select Category</option>
+            <option value="mobiles">Mobiles</option>
+            <option value="laptops">Laptops</option>
+            <option value="tablets">Tablets</option>
+            <option value="accessories">Accessories</option>
+            <option value="monitors">Monitors</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="productPrice">Price ($) *</label>
+          <input type="number" id="productPrice" step="0.01" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productStock">Stock *</label>
+          <input type="number" id="productStock" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productImage">Image URL</label>
+          <input type="url" id="productImage" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <p>&copy; 2024 ElectroShop. All rights reserved.</p>
+        <ul class="footer-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      updateAuthUI();
+      loadProducts();
+    });
+  </script>
+</body>
+
+</html>

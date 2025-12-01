@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details - Electronics Store</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">⚡ ElectroShop</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="#" id="ordersLink" style="display: none;">My Orders</a></li>
+        <li><a href="#" id="adminLink" style="display: none;">Admin</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="user-info" id="userInfo" style="display: none;">
+          <span class="user-name" id="userName"></span>
+          <a href="#" class="btn btn-small btn-secondary" id="logoutBtn">Logout</a>
+        </div>
+        <div id="authLinks">
+          <a href="login.html" class="btn btn-small btn-outline">Login</a>
+          <a href="signup.html" class="btn btn-small btn-primary">Sign Up</a>
+        </div>
+        <a href="cart.html" class="cart-icon">
+          🛒
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="product-detail">
+    <div class="container">
+      <div id="productDetail">
+        <!-- Product details will be loaded here -->
+      </div>
+
+      <!-- Loading Spinner -->
+      <div class="loading" id="loadingSpinner">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <p>&copy; 2024 ElectroShop. All rights reserved.</p>
+        <ul class="footer-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script>
+    let currentProduct = null;
+    let quantity = 1;
+
+    // Load product on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateAuthUI();
+      updateCartCount();
+      loadProduct();
+    });
+
+    // Get product ID from URL
+    function getProductId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('id');
+    }
+
+    // Load product details
+    async function loadProduct() {
+      const productId = getProductId();
+
+      if (!productId) {
+        window.location.href = 'products.html';
+        return;
+      }
+
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const productDetail = document.getElementById('productDetail');
+
+      try {
+        currentProduct = await API.getProduct(productId);
+        displayProduct(currentProduct);
+        loadingSpinner.style.display = 'none';
+      } catch (error) {
+        console.error('Error loading product:', error);
+        loadingSpinner.style.display = 'none';
+        productDetail.innerHTML = '<p>Product not found</p>';
+      }
+    }
+
+    // Display product details
+    function displayProduct(product) {
+      const productDetail = document.getElementById('productDetail');
+
+      const stockStatus = product.stock > 0
+        ? `<p class="product-stock">In Stock (${product.stock} available)</p>`
+        : '<p class="product-stock out-of-stock">Out of Stock</p>';
+
+      productDetail.innerHTML = `
+        <div class="product-detail-grid">
+          <div>
+            <img src="${product.image}" alt="${product.name}" class="product-detail-image">
+          </div>
+          <div class="product-detail-info">
+            <div class="product-category">${product.category}</div>
+            <h1>${product.name}</h1>
+            <div class="product-detail-price">$${product.price.toFixed(2)}</div>
+            ${stockStatus}
+            <p class="product-description">${product.description}</p>
+            
+            ${product.stock > 0 ? `
+              <div class="quantity-selector">
+                <label>Quantity:</label>
+                <button onclick="decreaseQuantity()">-</button>
+                <input type="number" id="quantityInput" value="1" min="1" max="${product.stock}" onchange="updateQuantity()">
+                <button onclick="increaseQuantity()">+</button>
+              </div>
+              
+              <div class="product-actions">
+                <button class="btn btn-primary" onclick="addToCart()">Add to Cart</button>
+                <button class="btn btn-outline" onclick="window.location.href='products.html'">Continue Shopping</button>
+              </div>
+            ` : `
+              <button class="btn btn-secondary" disabled>Out of Stock</button>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    // Quantity controls
+    function increaseQuantity() {
+      const input = document.getElementById('quantityInput');
+      const max = parseInt(input.max);
+      if (quantity < max) {
+        quantity++;
+        input.value = quantity;
+      }
+    }
+
+    function decreaseQuantity() {
+      const input = document.getElementById('quantityInput');
+      if (quantity > 1) {
+        quantity--;
+        input.value = quantity;
+      }
+    }
+
+    function updateQuantity() {
+      const input = document.getElementById('quantityInput');
+      quantity = parseInt(input.value) || 1;
+
+      const max = parseInt(input.max);
+      if (quantity > max) {
+        quantity = max;
+        input.value = max;
+      }
+      if (quantity < 1) {
+        quantity = 1;
+        input.value = 1;
+      }
+    }
+
+    // Add to cart
+    async function addToCart() {
+      try {
+        await Cart.addItem(currentProduct.id, quantity);
+        alert(`${quantity} x ${currentProduct.name} added to cart!`);
+        updateCartCount();
+
+        // Optionally redirect to cart
+        // window.location.href = 'cart.html';
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        alert('Failed to add product to cart');
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products - Electronics Store</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">⚡ ElectroShop</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="#" id="ordersLink" style="display: none;">My Orders</a></li>
+        <li><a href="#" id="adminLink" style="display: none;">Admin</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="user-info" id="userInfo" style="display: none;">
+          <span class="user-name" id="userName"></span>
+          <a href="#" class="btn btn-small btn-secondary" id="logoutBtn">Logout</a>
+        </div>
+        <div id="authLinks">
+          <a href="login.html" class="btn btn-small btn-outline">Login</a>
+          <a href="signup.html" class="btn btn-small btn-primary">Sign Up</a>
+        </div>
+        <a href="cart.html" class="cart-icon">
+          🛒
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="products-section">
+    <div class="container">
+      <h2>All Products</h2>
+      
+      <!-- Search and Filter -->
+      <div class="search-filter">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search products...">
+        </div>
+        <div class="filter-select">
+          <select id="categoryFilter">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid" id="productsGrid">
+        <!-- Products will be loaded dynamically -->
+      </div>
+
+      <!-- Loading Spinner -->
+      <div class="loading" id="loadingSpinner" style="display: none;">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- No Products Message -->
+      <div id="noProducts" style="display: none; text-align: center; padding: 3rem;">
+        <h3>No products found</h3>
+        <p>Try adjusting your search or filter</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <p>&copy; 2024 ElectroShop. All rights reserved.</p>
+        <ul class="footer-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script>
+    let allProducts = [];
+
+    // Load products on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      updateAuthUI();
+      updateCartCount();
+      await loadCategories();
+      await loadProducts();
+
+      // Setup search
+      document.getElementById('searchInput').addEventListener('input', filterProducts);
+      
+      // Setup category filter
+      document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+    });
+
+    // Load categories for filter dropdown
+    async function loadCategories() {
+      try {
+        const products = await API.getProducts();
+        const categories = [...new Set(products.map(p => p.category))];
+        
+        const filterSelect = document.getElementById('categoryFilter');
+        categories.forEach(category => {
+          const option = document.createElement('option');
+          option.value = category;
+          option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+          filterSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    }
+
+    // Load all products
+    async function loadProducts() {
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const productsGrid = document.getElementById('productsGrid');
+      
+      try {
+        loadingSpinner.style.display = 'flex';
+        allProducts = await API.getProducts();
+        displayProducts(allProducts);
+      } catch (error) {
+        console.error('Error loading products:', error);
+        productsGrid.innerHTML = '<p>Error loading products. Please try again later.</p>';
+      } finally {
+        loadingSpinner.style.display = 'none';
+      }
+    }
+
+    // Filter products based on search and category
+    function filterProducts() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const selectedCategory = document.getElementById('categoryFilter').value;
+      
+      let filtered = allProducts;
+      
+      // Filter by search term
+      if (searchTerm) {
+        filtered = filtered.filter(product => 
+          product.name.toLowerCase().includes(searchTerm) ||
+          product.description.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      // Filter by category
+      if (selectedCategory !== 'all') {
+        filtered = filtered.filter(product => product.category === selectedCategory);
+      }
+      
+      displayProducts(filtered);
+    }
+
+    // Display products in grid
+    function displayProducts(products) {
+      const productsGrid = document.getElementById('productsGrid');
+      const noProducts = document.getElementById('noProducts');
+      
+      if (products.length === 0) {
+        productsGrid.innerHTML = '';
+        noProducts.style.display = 'block';
+        return;
+      }
+      
+      noProducts.style.display = 'none';
+      productsGrid.innerHTML = products.map(product => `
+        <div class="product-card">
+          <img src="${product.image}" alt="${product.name}" class="product-image" onclick="window.location.href='product.html?id=${product.id}'">
+          <div class="product-info">
+            <div class="product-category">${product.category}</div>
+            <h3 class="product-name">${product.name}</h3>
+            <div class="product-price">$${product.price.toFixed(2)}</div>
+            <div class="product-actions">
+              <button class="btn btn-outline btn-small" onclick="window.location.href='product.html?id=${product.id}'">View Details</button>
+              <button class="btn btn-primary btn-small" onclick="addToCart(${product.id})">Add to Cart</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Add product to cart
+    async function addToCart(productId) {
+      try {
+        await Cart.addItem(productId, 1);
+        alert('Product added to cart!');
+        updateCartCount();
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        alert('Failed to add product to cart');
+      }
+    }
+  </script>
+</body>
+</html>

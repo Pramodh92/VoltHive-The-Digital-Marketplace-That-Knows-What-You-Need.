@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Electronics Store</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">⚡ ElectroShop</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="#" id="ordersLink" style="display: none;">My Orders</a></li>
+        <li><a href="#" id="adminLink" style="display: none;">Admin</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="user-info" id="userInfo" style="display: none;">
+          <span class="user-name" id="userName"></span>
+          <a href="#" class="btn btn-small btn-secondary" id="logoutBtn">Logout</a>
+        </div>
+        <div id="authLinks">
+          <a href="login.html" class="btn btn-small btn-outline">Login</a>
+          <a href="signup.html" class="btn btn-small btn-primary">Sign Up</a>
+        </div>
+        <a href="cart.html" class="cart-icon">
+          🛒
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="cart-page">
+    <div class="container">
+      <h2>Checkout</h2>
+
+      <div class="cart-container">
+        <!-- Customer Information Form -->
+        <div class="cart-items">
+          <div class="form-container" style="margin: 0; box-shadow: none; border: 1px solid var(--border-color);">
+            <h3>Customer Information</h3>
+
+            <div id="alertContainer"></div>
+
+            <div class="form-group">
+              <label for="customerName">Full Name *</label>
+              <input type="text" id="customerName" required>
+            </div>
+
+            <div class="form-group">
+              <label for="customerEmail">Email *</label>
+              <input type="email" id="customerEmail" required>
+            </div>
+
+            <div class="form-group">
+              <label for="customerPhone">Phone Number *</label>
+              <input type="tel" id="customerPhone" required>
+            </div>
+
+            <div class="form-group">
+              <label for="customerAddress">Delivery Address *</label>
+              <textarea id="customerAddress" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="customerCity">City *</label>
+              <input type="text" id="customerCity" required>
+            </div>
+
+            <div class="form-group">
+              <label for="customerZip">ZIP Code *</label>
+              <input type="text" id="customerZip" required>
+            </div>
+
+            <div class="form-group">
+              <label for="orderNotes">Order Notes (Optional)</label>
+              <textarea id="orderNotes" rows="2" placeholder="Any special instructions?"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div>
+          <div class="cart-summary">
+            <h3>Order Summary</h3>
+            <div id="orderItems" style="margin-bottom: 1rem; max-height: 300px; overflow-y: auto;">
+              <!-- Order items will be displayed here -->
+            </div>
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span id="subtotal">$0.00</span>
+            </div>
+            <div class="summary-row">
+              <span>Shipping:</span>
+              <span>Free</span>
+            </div>
+            <div class="summary-row summary-total">
+              <span>Total:</span>
+              <span id="total">$0.00</span>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="placeOrder()"
+              id="placeOrderBtn">
+              Place Order
+            </button>
+            <a href="cart.html" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem; text-align: center;">
+              Back to Cart
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <p>&copy; 2024 ElectroShop. All rights reserved.</p>
+        <ul class="footer-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script>
+    let cartItems = [];
+
+    // Load cart on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      updateAuthUI();
+      updateCartCount();
+      await loadCart();
+      prefillUserInfo();
+    });
+
+    // Load cart items
+    async function loadCart() {
+      try {
+        cartItems = await Cart.getItems();
+
+        if (cartItems.length === 0) {
+          alert('Your cart is empty!');
+          window.location.href = 'products.html';
+          return;
+        }
+
+        displayOrderSummary();
+      } catch (error) {
+        console.error('Error loading cart:', error);
+      }
+    }
+
+    // Display order summary
+    function displayOrderSummary() {
+      const orderItems = document.getElementById('orderItems');
+
+      orderItems.innerHTML = cartItems.map(item => `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+          <span>${item.name} x ${item.quantity}</span>
+          <span>$${item.total.toFixed(2)}</span>
+        </div>
+      `).join('');
+
+      const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
+      document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+      document.getElementById('total').textContent = `$${subtotal.toFixed(2)}`;
+    }
+
+    // Prefill user information if logged in
+    function prefillUserInfo() {
+      const user = Auth.getUser();
+      if (user) {
+        document.getElementById('customerEmail').value = user.email;
+        document.getElementById('customerName').value = user.username;
+      }
+    }
+
+    // Show alert message
+    function showAlert(message, type = 'error') {
+      const alertContainer = document.getElementById('alertContainer');
+      alertContainer.innerHTML = `
+        <div class="alert alert-${type}">
+          ${message}
+        </div>
+      `;
+
+      setTimeout(() => {
+        alertContainer.innerHTML = '';
+      }, 5000);
+    }
+
+    // Place order
+    async function placeOrder() {
+      // Validate form
+      const name = document.getElementById('customerName').value.trim();
+      const email = document.getElementById('customerEmail').value.trim();
+      const phone = document.getElementById('customerPhone').value.trim();
+      const address = document.getElementById('customerAddress').value.trim();
+      const city = document.getElementById('customerCity').value.trim();
+      const zip = document.getElementById('customerZip').value.trim();
+
+      if (!name || !email || !phone || !address || !city || !zip) {
+        showAlert('Please fill in all required fields');
+        return;
+      }
+
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showAlert('Please enter a valid email address');
+        return;
+      }
+
+      const placeOrderBtn = document.getElementById('placeOrderBtn');
+      placeOrderBtn.disabled = true;
+      placeOrderBtn.textContent = 'Processing...';
+
+      try {
+        const user = Auth.getUser();
+        const userId = user ? user.id : 'guest';
+
+        const orderData = {
+          userId: userId,
+          items: cartItems,
+          customerInfo: {
+            name,
+            email,
+            phone,
+            address,
+            city,
+            zip,
+            notes: document.getElementById('orderNotes').value.trim()
+          },
+          totalAmount: cartItems.reduce((sum, item) => sum + item.total, 0)
+        };
+
+        const response = await API.checkout(orderData);
+
+        // Clear cart
+        await Cart.clearCart();
+
+        // Show success message
+        alert(`Order placed successfully! Order ID: ${response.order.id}`);
+
+        // Redirect to orders page or home
+        if (user) {
+          window.location.href = 'orders.html';
+        } else {
+          window.location.href = 'index.html';
+        }
+      } catch (error) {
+        console.error('Error placing order:', error);
+        showAlert(error.message || 'Failed to place order. Please try again.');
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.textContent = 'Place Order';
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders - Electronics Store</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">⚡ ElectroShop</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="#" id="ordersLink" style="display: none;">My Orders</a></li>
+        <li><a href="#" id="adminLink" style="display: none;">Admin</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="user-info" id="userInfo" style="display: none;">
+          <span class="user-name" id="userName"></span>
+          <a href="#" class="btn btn-small btn-secondary" id="logoutBtn">Logout</a>
+        </div>
+        <div id="authLinks">
+          <a href="login.html" class="btn btn-small btn-outline">Login</a>
+          <a href="signup.html" class="btn btn-small btn-primary">Sign Up</a>
+        </div>
+        <a href="cart.html" class="cart-icon">
+          🛒
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="orders-page">
+    <div class="container">
+      <h2>My Orders</h2>
+
+      <div id="ordersContainer">
+        <!-- Orders will be loaded here -->
+      </div>
+
+      <!-- Loading Spinner -->
+      <div class="loading" id="loadingSpinner">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- No Orders Message -->
+      <div id="noOrders" style="display: none; text-align: center; padding: 3rem;">
+        <h3>No orders yet</h3>
+        <p>Start shopping to see your orders here!</p>
+        <a href="products.html" class="btn btn-primary">Shop Now</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <p>&copy; 2024 ElectroShop. All rights reserved.</p>
+        <ul class="footer-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script>
+    // Check if user is logged in
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.isLoggedIn()) {
+        alert('Please login to view your orders');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      updateAuthUI();
+      updateCartCount();
+      loadOrders();
+    });
+
+    // Load user orders
+    async function loadOrders() {
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const ordersContainer = document.getElementById('ordersContainer');
+      const noOrders = document.getElementById('noOrders');
+
+      try {
+        const user = Auth.getUser();
+        const orders = await API.getUserOrders(user.id);
+
+        loadingSpinner.style.display = 'none';
+
+        if (orders.length === 0) {
+          noOrders.style.display = 'block';
+          return;
+        }
+
+        displayOrders(orders);
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        loadingSpinner.style.display = 'none';
+        ordersContainer.innerHTML = '<p>Error loading orders. Please try again later.</p>';
+      }
+    }
+
+    // Display orders
+    function displayOrders(orders) {
+      const ordersContainer = document.getElementById('ordersContainer');
+
+      ordersContainer.innerHTML = orders.map(order => {
+        const orderDate = new Date(order.createdAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <div>
+                <div class="order-id">Order #${order.id}</div>
+                <div class="order-date">${orderDate}</div>
+              </div>
+              <span class="order-status ${order.status}">${order.status}</span>
+            </div>
+            
+            <div class="order-items">
+              ${order.items.map(item => `
+                <div class="order-item">
+                  <span>${item.name} x ${item.quantity}</span>
+                  <span>$${item.total.toFixed(2)}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <div style="padding-top: 1rem; border-top: 1px solid var(--border-color);">
+              <strong>Delivery Address:</strong>
+              <p style="margin-top: 0.5rem; color: var(--secondary-color);">
+                ${order.customerInfo.name}<br>
+                ${order.customerInfo.address}, ${order.customerInfo.city}<br>
+                ${order.customerInfo.zip}<br>
+                ${order.customerInfo.phone}
+              </p>
+            </div>
+
+            <div class="order-total">
+              Total: $${order.totalAmount.toFixed(2)}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+
+</html>
